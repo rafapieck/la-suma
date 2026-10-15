@@ -24,7 +24,7 @@ In Mexico, every installment looks affordable on its own: "only 200 a month," a 
 
 ## 4. Mockup (image-generated)
 
-![La Suma mockup](mockup.png)
+![La Suma mockup](mockup.jpg)
 
 Prompt used for image generation:
 
