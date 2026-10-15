@@ -1,13 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import {
-  buildCalendar,
-  todayInMexico,
-  type CalendarCommitment,
-} from "@/lib/calendar/build-calendar";
+import { buildCalendar, todayInMexico } from "@/lib/calendar/build-calendar";
+import { getMyCommitments } from "@/lib/commitments/queries";
 import { formatFrequency, formatMoney } from "@/lib/format";
-import { createClient } from "@/lib/supabase/server";
 import { CalendarCard } from "./calendar-card";
 
 export default function CalendarioPage() {
@@ -30,21 +25,11 @@ export default function CalendarioPage() {
 }
 
 async function Calendario() {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims) redirect("/");
-
-  // RLS returns only this user's rows.
-  const { data, error } = await supabase
-    .from("commitments")
-    .select("id, lender, label, amount, frequency, next_due_date, payments_left")
-    .order("created_at", { ascending: false });
-
-  if (error) {
+  const { commitments, email } = await getMyCommitments();
+  if (!commitments) {
     return <p className="text-red-600">No pudimos leer tus pagos. Intenta de nuevo.</p>;
   }
 
-  const commitments: CalendarCommitment[] = data.map((c) => ({ ...c, amount: Number(c.amount) }));
   const calendar = buildCalendar(commitments, todayInMexico());
 
   return (
@@ -64,6 +49,12 @@ async function Calendario() {
           + Agregar a mano
         </Link>
       </div>
+      <Link
+        href="/calendario/preview"
+        className="mx-auto rounded-full bg-zinc-200 px-6 py-3 text-center font-medium dark:bg-zinc-800"
+      >
+        ¿Y si compro algo más?
+      </Link>
 
       {calendar.incomplete.length > 0 && (
         <div className="rounded-2xl border border-amber-200 p-5 dark:border-amber-900">
@@ -103,7 +94,7 @@ async function Calendario() {
           </ul>
         )}
         <p className="mt-4 text-sm text-zinc-500">
-          Sesión: {String(claims.claims.email ?? "")}
+          Sesión: {email}
         </p>
       </div>
     </section>
