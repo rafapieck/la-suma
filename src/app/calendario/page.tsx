@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { buildCalendar, todayInMexico } from "@/lib/calendar/build-calendar";
-import { getMyCommitments } from "@/lib/commitments/queries";
+import { getMyCommitments, getMyLimits } from "@/lib/commitments/queries";
 import { formatFrequency, formatMoney } from "@/lib/format";
 import { CalendarCard } from "./calendar-card";
 
@@ -25,7 +25,7 @@ export default function CalendarioPage() {
 }
 
 async function Calendario() {
-  const { commitments, email } = await getMyCommitments();
+  const [{ commitments, email }, limits] = await Promise.all([getMyCommitments(), getMyLimits()]);
   if (!commitments) {
     return <p className="text-red-600">No pudimos leer tus pagos. Intenta de nuevo.</p>;
   }
@@ -34,7 +34,7 @@ async function Calendario() {
 
   return (
     <section className="flex flex-col gap-4">
-      <CalendarCard calendar={calendar} />
+      <CalendarCard calendar={calendar} ceiling={limits?.ceiling_per_quincena ?? null} />
       <div className="grid grid-cols-2 gap-3">
         <Link
           href="/calendario/foto"
@@ -54,6 +54,9 @@ async function Calendario() {
         className="mx-auto rounded-full bg-zinc-200 px-6 py-3 text-center font-medium dark:bg-zinc-800"
       >
         ¿Y si compro algo más?
+      </Link>
+      <Link href="/calendario/limites" className="py-2 text-center underline">
+        Mis límites
       </Link>
 
       {calendar.incomplete.length > 0 && (

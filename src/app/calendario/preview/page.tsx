@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { todayInMexico } from "@/lib/calendar/build-calendar";
-import { getMyCommitments } from "@/lib/commitments/queries";
+import { getMyCommitments, getMyLimits } from "@/lib/commitments/queries";
+import { isPauseActive, pauseMessage } from "@/lib/limits/limits";
 import { PreviewTool } from "./preview-tool";
 
 export default function PreviewPage() {
@@ -18,9 +19,10 @@ export default function PreviewPage() {
 }
 
 async function Preview() {
-  const { commitments } = await getMyCommitments();
+  const [{ commitments }, limits] = await Promise.all([getMyCommitments(), getMyLimits()]);
   if (!commitments) {
     return <p className="text-red-600">No pudimos leer tus pagos. Intenta de nuevo.</p>;
   }
-  return <PreviewTool commitments={commitments} today={todayInMexico()} />;
+  const pauseNote = limits && isPauseActive(limits) ? pauseMessage(limits) : null;
+  return <PreviewTool commitments={commitments} today={todayInMexico()} pauseNote={pauseNote} />;
 }

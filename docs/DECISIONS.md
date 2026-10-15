@@ -46,3 +46,10 @@
 - **Added:** `vitest.config.ts` so tests can use the `@/` import alias.
 - **Still open:** frequency field not marked red in the manual form when left empty (test pass). The same check does show its message on the preview form, so the bug is specific to the manual form's server action.
 - **Next:** Rafael checks F6 on the live URL. Then F7, self-set limits and the pause note.
+- **F6 verified (by Rafael on the live URL):** the before/after preview shows +$600 per quincena correctly, no verdict text appears, and "No agregar" leaves the calendar unchanged.
+- **Decided:** F7 self-set limits and pause at `/calendario/limites` ("Mis límites" link on the calendar). Every field is optional. No `limits` row exists until the user saves one, so there is no default limit. Saving an empty field removes that limit.
+- **Decided (limit line):** the ceiling is drawn as a dashed teal mark on each quincena's bar, with a "Tu límite: $X" legend. Bars scale to the larger of the biggest total and the limit. Rows over the line get no special color or text, because that would be a verdict.
+- **Decided (pause):** "Pausa hasta" (today or later) + "Nota para mí" (≤ 200 chars, Zod). The pause lasts through the end of that day in Mexico City (stored as `YYYY-MM-DDT23:59:59-06:00`). A note is only kept together with a pause. While the pause is active, "¿Y si compro algo más?" first shows "Te pediste una pausa hasta {fecha}: “{nota}”" with a "Continuar" button that always opens the preview, so it never blocks. Only the user ends a pause, either with "Terminar pausa ahora" or by clearing the date; the app never sets or ends one on its own. After the date passes it simply stops showing.
+- **Checked locally:** 47 tests pass (empty form → no limit and no pause; note over 200 rejected; pause active through 23:59 of its day; her note is shown back word for word). In the browser: dashed marks line up on every bar, the pause note shows first, and "Continuar" opens the preview form.
+- **Still open:** frequency field not marked red in the manual form (test pass).
+- **Next:** Rafael checks F7 on the live URL. Then F8, "Borrar todos mis datos".

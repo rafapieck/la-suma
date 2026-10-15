@@ -27,10 +27,35 @@ function FieldError({ messages }: { messages?: string[] }) {
 export function PreviewTool({
   commitments,
   today,
+  pauseNote = null,
 }: {
   commitments: CalendarCommitment[];
   today: string;
+  /** Her own pause note. Shown first, never blocks: "Continuar" always opens the preview. */
+  pauseNote?: string | null;
 }) {
+  const [continued, setContinued] = useState(false);
+  if (pauseNote && !continued) {
+    return (
+      <div className="flex flex-col gap-4 rounded-2xl border border-teal-200 p-5 dark:border-teal-900">
+        <p className="text-lg">{pauseNote}</p>
+        <button
+          type="button"
+          onClick={() => setContinued(true)}
+          className="rounded-xl bg-zinc-900 px-6 py-4 text-lg font-semibold text-white dark:bg-white dark:text-zinc-900"
+        >
+          Continuar
+        </button>
+        <Link href="/calendario" className="py-3 text-center underline">
+          Volver al calendario
+        </Link>
+      </div>
+    );
+  }
+  return <PreviewForm commitments={commitments} today={today} />;
+}
+
+function PreviewForm({ commitments, today }: { commitments: CalendarCommitment[]; today: string }) {
   const [errors, setErrors] = useState<Errors>({});
   const [paymentsUnknown, setPaymentsUnknown] = useState(false);
   const [result, setResult] = useState<{ input: PreviewInput; preview: Preview } | null>(null);
