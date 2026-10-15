@@ -22,5 +22,10 @@
 - **Decided (date rules):** semanal = every 7 days. mensual = same day each month, clamped to short months (31 → Nov 30), then back to 31 when the month allows. quincenal = once per quincena on the same position (5 → 5 and 20); a month-end date stays on the 15th and the last day.
 - **Decided (incomplete rules):** no date → not added to any total, counted as missing info in every quincena. Date but no payments left → assumed to keep going through the window and flagged in each quincena where it adds a payment. Payments due before the window still use up `payments_left`.
 - **Decided (UI):** card like the mockup with label, total and bar per quincena (bar relative to the largest total). The banner "Este total puede estar incompleto: solo incluye lo que tú agregaste" always shows, since it is always true. A yellow chip "Falta información de N pago(s)" shows on affected rows. Below: "+ Agregar a mano", a list of payments missing data, and the full list of payments. Photo and preview buttons come with F5 and F6.
-- **Next:** F5, add with photo (Gemini). Then deploy #2.
-- **Tomorrow's first move:** on the live URL, add a weekly payment and a day-31 monthly payment and compare totals against the calendar. Then check the current Gemini Flash model name in the docs.
+- **F4 verified (by Rafael on the live URL):** correct totals, bars, the incomplete banner and the yellow chips.
+
+#### Session close (2026-10-15)
+- **Done:** F0–F4 finished, and each one verified live at https://la-suma-jet.vercel.app (repo cleanup, scaffold + deploy #1, Google auth + RLS, manual add with validation, 6-quincena calendar).
+- **Still open:** frequency bug. Leaving frequency on "Elige una opción" shows "Revisa los campos marcados" but the field is not marked in red. Fix in the test pass.
+- **Next:** F5, add with photo (Gemini, server route only, simulated fallback), then deploy #2. `GEMINI_API_KEY` is already in Vercel.
+- **Tomorrow's first move:** start F5. Check the docs for the current free Gemini Flash model that reads images, then build the upload route and confirm screen.
