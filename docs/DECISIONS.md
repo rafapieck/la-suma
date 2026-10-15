@@ -16,5 +16,11 @@
 - **Decided:** amount stays required (no reply to the F2 question, so the default holds).
 - **Decided:** added Vitest now (`npm test`) for the F3 schema tests; bumped `@types/node` to 22 so Vitest 5 installs.
 - **Decided:** `/calendario` shows a plain list of saved payments until F4 replaces it with the quincena calendar.
-- **Next:** F4, the 6-quincena calendar with tests.
-- **Tomorrow's first move:** on the live URL, add one payment with "No sé" for date and payments left, and check the rejected cases. Then write `buildCalendar` tests first.
+- **F3 verified (by Rafael on the live URL):** a payment with "No sé" for date and payments left saves and shows "No sé"; a negative amount is rejected with "El monto debe ser mayor que 0".
+- **Bug (open, fix in the test pass):** when frequency is left on "Elige una opción", the form shows "Revisa los campos marcados" but the frequency field is not marked in red.
+- **Decided:** F4 calendar. `buildCalendar(commitments, today)` in `src/lib/calendar/build-calendar.ts` is pure and uses "YYYY-MM-DD" strings in UTC. Window = the quincena containing today plus the next 5 (Q1 = 1–15, Q2 = 16–end of month). Today is taken in Mexico City time. Totals are summed in cents.
+- **Decided (date rules):** semanal = every 7 days. mensual = same day each month, clamped to short months (31 → Nov 30), then back to 31 when the month allows. quincenal = once per quincena on the same position (5 → 5 and 20); a month-end date stays on the 15th and the last day.
+- **Decided (incomplete rules):** no date → not added to any total, counted as missing info in every quincena. Date but no payments left → assumed to keep going through the window and flagged in each quincena where it adds a payment. Payments due before the window still use up `payments_left`.
+- **Decided (UI):** card like the mockup with label, total and bar per quincena (bar relative to the largest total). The banner "Este total puede estar incompleto: solo incluye lo que tú agregaste" always shows, since it is always true. A yellow chip "Falta información de N pago(s)" shows on affected rows. Below: "+ Agregar a mano", a list of payments missing data, and the full list of payments. Photo and preview buttons come with F5 and F6.
+- **Next:** F5, add with photo (Gemini). Then deploy #2.
+- **Tomorrow's first move:** on the live URL, add a weekly payment and a day-31 monthly payment and compare totals against the calendar. Then check the current Gemini Flash model name in the docs.
