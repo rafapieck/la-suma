@@ -50,12 +50,20 @@ async function Calendario() {
   return (
     <section className="flex flex-col gap-4">
       <CalendarCard calendar={calendar} />
-      <Link
-        href="/calendario/agregar"
-        className="rounded-full bg-teal-800 px-6 py-4 text-center text-lg font-semibold text-white dark:bg-teal-400 dark:text-zinc-900"
-      >
-        + Agregar a mano
-      </Link>
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/calendario/foto"
+          className="rounded-full bg-teal-800 px-4 py-4 text-center text-lg font-semibold text-white dark:bg-teal-400 dark:text-zinc-900"
+        >
+          📷 Agregar con foto
+        </Link>
+        <Link
+          href="/calendario/agregar"
+          className="rounded-full bg-teal-800 px-4 py-4 text-center text-lg font-semibold text-white dark:bg-teal-400 dark:text-zinc-900"
+        >
+          + Agregar a mano
+        </Link>
+      </div>
 
       {calendar.incomplete.length > 0 && (
         <div className="rounded-2xl border border-amber-200 p-5 dark:border-amber-900">

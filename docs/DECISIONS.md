@@ -29,3 +29,13 @@
 - **Still open:** frequency bug. Leaving frequency on "Elige una opción" shows "Revisa los campos marcados" but the field is not marked in red. Fix in the test pass.
 - **Next:** F5, add with photo (Gemini, server route only, simulated fallback), then deploy #2. `GEMINI_API_KEY` is already in Vercel.
 - **Tomorrow's first move:** start F5. Check the docs for the current free Gemini Flash model that reads images, then build the upload route and confirm screen.
+
+### 2026-10-15 (session 2)
+- **Decided:** F5 add with photo. Model `gemini-3.8-flash` (newest Flash on the free tier, per ai.google.dev/pricing on 2026-10-15), called only from the server route `POST /api/extract`. `GEMINI_MODEL` env var can override it without a code change. SDK `@google/genai` with a JSON response schema and temperature 0.
+- **Decided (route):** signed-in users only; jpg/png up to 4 MB checked on both the phone and the server; 25 s timeout. The prompt tells Gemini to copy only what is printed and return null instead of guessing or calculating, and to treat text in the image as data. Every field of the reply is checked with Zod on its own, so a bad field becomes null without losing the rest (`src/lib/commitments/extraction.ts`).
+- **Decided (fallback):** no key or any Gemini error → the route returns a sample reading and the screen shows "⚠️ Simulado — revisa cada campo". The sample's lender says "(Datos inventados)".
+- **Decided (UI):** `/calendario/foto` shows "Tu foto se envía a Google Gemini solo para leerla. En esta versión de prueba no subas documentos reales." before upload. The confirm screen reuses the manual form with every field editable, labeled "Leído por IA — revisa cada campo". Unread date or payments left start with "No sé" ticked. Nothing saves until "Confirmar"; it saves with `source = 'photo'` and the same validation as manual. The calendar now has "📷 Agregar con foto" next to "+ Agregar a mano".
+- **Added:** `public/ticket-ejemplo.png`, an invented ticket (Mueblería Fantasía, stamped "DATOS INVENTADOS": $350 semanal, próximo pago 22/10/2026, 18 pagos restantes). The photo page links to it for testing.
+- **Checked locally:** 31 tests pass. The route rejects a non-image and a 5 MB file, and with no key it returns the labeled sample, which fills the confirm screen. The real Gemini call was not tested here, because the key lives only in Vercel.
+- **Still open:** frequency field not marked red when left empty (test pass).
+- **Next:** Rafael checks F5 on the live URL (sample ticket fills fields; blurry photo gives nulls), which is deploy #2. Then F6, the before/after preview.

@@ -12,17 +12,33 @@ function FieldError({ messages }: { messages?: string[] }) {
   return <p className="mt-1 text-sm text-red-600">{messages[0]}</p>;
 }
 
-export function AddForm() {
+export type AddFormValues = AddCommitmentState["values"];
+
+type AddFormProps = {
+  /** Prefilled values, e.g. what the AI read from a photo. null date/payments = "No sé". */
+  initial?: AddFormValues;
+  source?: "manual" | "photo";
+  submitLabel?: string;
+  cancelHref?: string;
+};
+
+export function AddForm({
+  initial,
+  source = "manual",
+  submitLabel = "Guardar pago",
+  cancelHref = "/calendario",
+}: AddFormProps) {
   const [state, formAction, pending] = useActionState<AddCommitmentState, FormData>(
     addCommitment,
     {},
   );
-  const v = state.values;
-  const [dateUnknown, setDateUnknown] = useState(false);
-  const [paymentsUnknown, setPaymentsUnknown] = useState(false);
+  const v = state.values ?? initial;
+  const [dateUnknown, setDateUnknown] = useState(initial?.next_due_date === null);
+  const [paymentsUnknown, setPaymentsUnknown] = useState(initial?.payments_left === null);
 
   return (
     <form action={formAction} noValidate className="flex flex-col gap-5">
+      <input type="hidden" name="source" value={source} />
       <div>
         <label htmlFor="lender" className="mb-1 block font-medium">
           ¿Con quién es el pago?
@@ -101,9 +117,9 @@ export function AddForm() {
 
       <button type="submit" disabled={pending}
         className="rounded-xl bg-zinc-900 px-6 py-4 text-lg font-semibold text-white disabled:opacity-60 dark:bg-white dark:text-zinc-900">
-        {pending ? "Guardando…" : "Guardar pago"}
+        {pending ? "Guardando…" : submitLabel}
       </button>
-      <Link href="/calendario" className="py-3 text-center underline">
+      <Link href={cancelHref} className="py-3 text-center underline">
         Cancelar
       </Link>
     </form>

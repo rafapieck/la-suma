@@ -34,10 +34,13 @@ export async function addCommitment(
   const userId = claims?.claims?.sub;
   if (!userId) redirect("/");
 
+  // Only these two values are accepted; anything else counts as manual.
+  const source = formData.get("source") === "photo" ? "photo" : "manual";
+
   const { error } = await supabase.from("commitments").insert({
     ...parsed.data,
     user_id: userId,
-    source: "manual",
+    source,
     confirmed: true,
   });
   if (error) {
