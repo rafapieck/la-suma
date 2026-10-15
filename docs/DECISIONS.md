@@ -52,4 +52,10 @@
 - **Decided (pause):** "Pausa hasta" (today or later) + "Nota para mí" (≤ 200 chars, Zod). The pause lasts through the end of that day in Mexico City (stored as `YYYY-MM-DDT23:59:59-06:00`). A note is only kept together with a pause. While the pause is active, "¿Y si compro algo más?" first shows "Te pediste una pausa hasta {fecha}: “{nota}”" with a "Continuar" button that always opens the preview, so it never blocks. Only the user ends a pause, either with "Terminar pausa ahora" or by clearing the date; the app never sets or ends one on its own. After the date passes it simply stops showing.
 - **Checked locally:** 47 tests pass (empty form → no limit and no pause; note over 200 rejected; pause active through 23:59 of its day; her note is shown back word for word). In the browser: dashed marks line up on every bar, the pause note shows first, and "Continuar" opens the preview form.
 - **Still open:** frequency field not marked red in the manual form (test pass).
-- **Next:** Rafael checks F7 on the live URL. Then F8, "Borrar todos mis datos".
+
+#### Session close (2026-10-15, session 2)
+- **Done:** F0–F6 finished and verified live at https://la-suma-jet.vercel.app (deploy #2 done with F5).
+- **Built, not yet verified live:** F7 self-set limits and pause note (commit `53e6fad`).
+- **Still open:** frequency bug. In the manual form, leaving frequency on "Elige una opción" shows "Revisa los campos marcados" but the field is not marked in red. Fix in the test pass.
+- **Next:** F8 "Borrar todos mis datos", then F9 copy audit and deploy #3.
+- **Tomorrow's first move:** verify F7 on the live URL (set a limit and check the dashed marks; set a pause with a note and open "¿Y si compro algo más?"; end the pause). Then start F8.
