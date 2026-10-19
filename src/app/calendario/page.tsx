@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buildCalendar, todayInMexico } from "@/lib/calendar/build-calendar";
 import { getMyCommitments, getMyLimits } from "@/lib/commitments/queries";
 import { formatFrequency, formatMoney } from "@/lib/format";
+import { DeleteAll } from "./borrar/delete-all";
 import { CalendarCard } from "./calendar-card";
 
 export default function CalendarioPage() {
@@ -100,6 +101,7 @@ async function Calendario() {
           Sesión: {email}
         </p>
       </div>
+      <DeleteAll />
     </section>
   );
 }

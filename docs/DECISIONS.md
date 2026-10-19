@@ -59,3 +59,6 @@
 - **Still open:** frequency bug. In the manual form, leaving frequency on "Elige una opción" shows "Revisa los campos marcados" but the field is not marked in red. Fix in the test pass.
 - **Next:** F8 "Borrar todos mis datos", then F9 copy audit and deploy #3.
 - **Tomorrow's first move:** verify F7 on the live URL (set a limit and check the dashed marks; set a pause with a note and open "¿Y si compro algo más?"; end the pause). Then start F8.
+
+### 2026-10-19 (session 3)
+- **Decided:** F8 "Borrar todos mis datos". A red-outline button at the bottom of the calendar opens a confirmation ("Se borran todos tus pagos, tu límite y tu pausa. No se puede deshacer.") with "Sí, borrar todo" and "Cancelar". A server action deletes the user's rows in `commitments` and `limits` (filtered by `user_id`, and RLS limits it to her rows anyway), then reloads the empty calendar. If either delete fails, nothing is hidden: the screen says "No pudimos borrar todo. Intenta de nuevo."
