@@ -131,7 +131,7 @@ function PreviewForm({
         </div>
         <div>
           <label htmlFor="payments_left" className="mb-1 block font-medium">
-            ¿Cuántos pagos serían?
+            ¿Cuántos pagos serían? <span className="font-normal">(pagos, no meses)</span>
           </label>
           <input id="payments_left" name="payments_left" type="number" inputMode="numeric"
             step="1" min="1" disabled={paymentsUnknown} className={inputClass} />
