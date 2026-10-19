@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
-import type { CommitmentField } from "@/lib/commitments/schema";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
+import { z } from "zod";
+import {
+  commitmentInputSchema,
+  readCommitmentForm,
+  type CommitmentField,
+} from "@/lib/commitments/schema";
 import { addCommitment, type AddCommitmentState } from "./actions";
 
 const inputClass = "w-full rounded-xl border px-4 py-3 text-lg disabled:opacity-50";
@@ -20,6 +25,13 @@ function FieldError({ id, messages }: { id: string; messages?: string[] }) {
 }
 
 export type AddFormValues = AddCommitmentState["values"];
+type Errors = NonNullable<AddCommitmentState["errors"]>;
+
+const FREQUENCY_OPTIONS = [
+  { value: "semanal", label: "Cada semana" },
+  { value: "quincenal", label: "Cada quincena" },
+  { value: "mensual", label: "Cada mes" },
+] as const;
 
 type AddFormProps = {
   /** Prefilled values, e.g. what the AI read from a photo. null date/payments = "No sé". */
@@ -41,10 +53,27 @@ export function AddForm({
   );
   const v = state.values ?? initial;
   const formRef = useRef<HTMLFormElement>(null);
+  // Errors found in the browser before sending. Server errors (state.errors) still apply
+  // when the browser check is skipped or bypassed.
+  const [clientErrors, setClientErrors] = useState<Errors | null>(null);
+  const errors = clientErrors ?? state.errors;
+  const message = clientErrors ? "Revisa los campos marcados." : state.message;
 
-  // Marks a field red and links it to its message when the server rejected it.
+  // Same Zod schema as the server: block the save in the browser too.
+  function checkBeforeSend(event: FormEvent<HTMLFormElement>) {
+    const parsed = commitmentInputSchema.safeParse(readCommitmentForm(new FormData(event.currentTarget)));
+    if (parsed.success) {
+      setClientErrors(null);
+      return;
+    }
+    event.preventDefault();
+    setClientErrors(z.flattenError(parsed.error).fieldErrors);
+  }
+
+  // Marks a field red and links it to its message.
+  const invalidField = (name: CommitmentField) => Boolean(errors?.[name]?.length);
   const field = (name: CommitmentField) => {
-    const invalid = Boolean(state.errors?.[name]?.length);
+    const invalid = invalidField(name);
     return {
       className: `${inputClass} ${invalid ? errorBorder : okBorder}`,
       "aria-invalid": invalid || undefined,
@@ -55,12 +84,13 @@ export function AddForm({
   // After a rejected save, move to the first field that needs fixing.
   useEffect(() => {
     formRef.current?.querySelector<HTMLElement>("[aria-invalid=true]")?.focus();
-  }, [state]);
+  }, [errors]);
   const [dateUnknown, setDateUnknown] = useState(initial?.next_due_date === null);
   const [paymentsUnknown, setPaymentsUnknown] = useState(initial?.payments_left === null);
 
   return (
-    <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-5">
+    <form ref={formRef} action={formAction} onSubmit={checkBeforeSend} noValidate
+      className="flex flex-col gap-5">
       <input type="hidden" name="source" value={source} />
       <div>
         <label htmlFor="lender" className="mb-1 block font-medium">
@@ -68,7 +98,7 @@ export function AddForm({
         </label>
         <input id="lender" name="lender" maxLength={60} placeholder="Ej. Coppel"
           defaultValue={v?.lender} {...field("lender")} />
-        <FieldError id="lender" messages={state.errors?.lender} />
+        <FieldError id="lender" messages={errors?.lender} />
       </div>
 
       <div>
@@ -77,7 +107,7 @@ export function AddForm({
         </label>
         <input id="label" name="label" placeholder="Ej. Refrigerador"
           defaultValue={v?.label} {...field("label")} />
-        <FieldError id="label" messages={state.errors?.label} />
+        <FieldError id="label" messages={errors?.label} />
       </div>
 
       <div>
@@ -86,22 +116,39 @@ export function AddForm({
         </label>
         <input id="amount" name="amount" type="number" inputMode="decimal" step="0.01" min="0"
           placeholder="Ej. 450" defaultValue={v?.amount} {...field("amount")} />
-        <FieldError id="amount" messages={state.errors?.amount} />
+        <FieldError id="amount" messages={errors?.amount} />
       </div>
 
-      <div>
-        <label htmlFor="frequency" className="mb-1 block font-medium">
-          ¿Cada cuánto pagas?
-        </label>
-        <select id="frequency" name="frequency" defaultValue={v?.frequency ?? ""}
-          {...field("frequency")}>
-          <option value="" disabled>Elige una opción</option>
-          <option value="semanal">Cada semana</option>
-          <option value="quincenal">Cada quincena</option>
-          <option value="mensual">Cada mes</option>
-        </select>
-        <FieldError id="frequency" messages={state.errors?.frequency} />
-      </div>
+      {/* Big radio buttons instead of a dropdown: nothing is chosen until she taps one.
+          A phone's dropdown picker can pick the first option on its own. */}
+      <fieldset
+        aria-describedby={invalidField("frequency") ? "frequency-error" : undefined}
+        className={`rounded-xl p-3 ${invalidField("frequency") ? errorBorder : "border border-transparent"}`}
+      >
+        <legend className="mb-1 px-1 font-medium">¿Cada cuánto pagas?</legend>
+        <div className="grid gap-2">
+          {FREQUENCY_OPTIONS.map((o, i) => (
+            <label
+              key={o.value}
+              className="flex items-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-lg has-checked:border-teal-800 has-checked:bg-teal-50 dark:border-zinc-700 dark:bg-zinc-900 dark:has-checked:border-teal-300 dark:has-checked:bg-teal-950"
+            >
+              <input
+                type="radio"
+                name="frequency"
+                value={o.value}
+                defaultChecked={v?.frequency === o.value}
+                aria-invalid={(i === 0 && invalidField("frequency")) || undefined}
+                onChange={() =>
+                  setClientErrors((e) => (e ? { ...e, frequency: undefined } : e))
+                }
+                className="h-6 w-6"
+              />
+              {o.label}
+            </label>
+          ))}
+        </div>
+        <FieldError id="frequency" messages={errors?.frequency} />
+      </fieldset>
 
       <div>
         <label htmlFor="next_due_date" className="mb-1 block font-medium">
@@ -114,7 +161,7 @@ export function AddForm({
             onChange={(e) => setDateUnknown(e.target.checked)} className="h-6 w-6" />
           No sé
         </label>
-        <FieldError id="next_due_date" messages={state.errors?.next_due_date} />
+        <FieldError id="next_due_date" messages={errors?.next_due_date} />
       </div>
 
       <div>
@@ -129,12 +176,12 @@ export function AddForm({
             onChange={(e) => setPaymentsUnknown(e.target.checked)} className="h-6 w-6" />
           No sé
         </label>
-        <FieldError id="payments_left" messages={state.errors?.payments_left} />
+        <FieldError id="payments_left" messages={errors?.payments_left} />
       </div>
 
-      {state.message && (
+      {message && (
         <p aria-live="polite" className="rounded-xl bg-red-50 p-3 text-red-700 dark:bg-red-950 dark:text-red-300">
-          {state.message}
+          {message}
         </p>
       )}
 
