@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "La Suma",
-  description: "Todas tus cuotas en un solo calendario de quincenas.",
+  description: "Todos tus abonos en un solo calendario de quincenas.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

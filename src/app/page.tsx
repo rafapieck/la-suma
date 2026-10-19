@@ -8,7 +8,7 @@ export default function Home() {
         Datos inventados · versión de prueba
       </p>
       <p className="max-w-sm text-base">
-        Todas tus cuotas en un solo calendario de quincenas.
+        Todos tus abonos en un solo calendario de quincenas.
       </p>
       <SignInButton />
     </main>
