@@ -96,7 +96,9 @@ export function PhotoFlow() {
           onChange={(e) => upload(e.target.files?.[0])}
         />
       </label>
-      <p className="text-sm text-zinc-500">JPG o PNG, máximo 4 MB.</p>
+      <p className="text-sm text-zinc-500">
+        {loading ? "Leer la foto puede tardar hasta un minuto." : "JPG o PNG, máximo 4 MB."}
+      </p>
       {error && <p className="text-red-600">{error}</p>}
       <p className="text-sm">
         ¿Quieres probar?{" "}

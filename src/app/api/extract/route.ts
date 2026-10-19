@@ -9,11 +9,15 @@ import {
   sanitizeExtraction,
   type ExtractResult,
 } from "@/lib/commitments/extraction";
+import { withTimeoutRetry } from "@/lib/retry";
 import { createClient } from "@/lib/supabase/server";
 
 // Current free-tier Gemini Flash model that reads images. Override with GEMINI_MODEL.
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+// Gemini sometimes takes longer than usual: 25 s per try, one retry, then the simulated
+// fallback. maxDuration leaves room for both tries on Vercel.
 const TIMEOUT_MS = 25_000;
+export const maxDuration = 60;
 
 const simulated = () => NextResponse.json<ExtractResult>({ simulated: true, fields: SIMULATED_EXTRACTION });
 
@@ -42,25 +46,32 @@ export async function POST(request: NextRequest) {
   try {
     const ai = new GoogleGenAI({ apiKey });
     const data = Buffer.from(await file.arrayBuffer()).toString("base64");
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [{ inlineData: { mimeType: file.type, data } }, { text: EXTRACTION_PROMPT }],
-        },
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseJsonSchema: EXTRACTION_JSON_SCHEMA,
-        temperature: 0,
-        abortSignal: AbortSignal.timeout(TIMEOUT_MS),
+    const raw = await withTimeoutRetry(
+      async (abortSignal) => {
+        const response = await ai.models.generateContent({
+          model: MODEL,
+          contents: [
+            {
+              role: "user",
+              parts: [{ inlineData: { mimeType: file.type, data } }, { text: EXTRACTION_PROMPT }],
+            },
+          ],
+          config: {
+            responseMimeType: "application/json",
+            responseJsonSchema: EXTRACTION_JSON_SCHEMA,
+            temperature: 0,
+            abortSignal,
+          },
+        });
+        // Parse inside the retry so a cut-off or malformed reply also gets a second try.
+        return JSON.parse(response.text ?? "null") as unknown;
       },
-    });
-    const fields = sanitizeExtraction(JSON.parse(response.text ?? "null"));
+      { timeoutMs: TIMEOUT_MS },
+    );
+    const fields = sanitizeExtraction(raw);
     return NextResponse.json<ExtractResult>({ simulated: false, fields });
   } catch (error) {
-    console.error("Gemini extraction failed:", error instanceof Error ? error.message : error);
+    console.error("Gemini extraction failed after retry:", error instanceof Error ? error.message : error);
     return simulated();
   }
 }
