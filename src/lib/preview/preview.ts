@@ -29,6 +29,8 @@ export type PreviewRow = {
   before: number;
   after: number;
   difference: number;
+  /** How far "after" goes past HER limit. null when she set no limit or it stays at/below it. */
+  afterAboveLimit: number | null;
 };
 
 export type Preview = {
@@ -42,6 +44,7 @@ export function buildPreview(
   commitments: CalendarCommitment[],
   hypothetical: PreviewInput,
   today: string,
+  ceiling: number | null = null,
 ): Preview {
   const before = buildCalendar(commitments, today);
   const after = buildCalendar(
@@ -54,11 +57,14 @@ export function buildPreview(
       label: q.label,
       before: q.total,
       after: a,
-      difference: Math.round((a - q.total) * 100) / 100,
+      difference: round(a - q.total),
+      afterAboveLimit: ceiling !== null && a > ceiling ? round(a - ceiling) : null,
     };
   });
   return { before, after, rows };
 }
+
+const round = (n: number) => Math.round(n * 100) / 100;
 
 /** Query string that prefills the manual form with the previewed purchase. */
 export function toAddFormQuery(input: PreviewInput): string {

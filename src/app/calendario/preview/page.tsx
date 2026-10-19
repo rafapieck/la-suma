@@ -24,5 +24,12 @@ async function Preview() {
     return <p className="text-red-600">No pudimos leer tus pagos. Intenta de nuevo.</p>;
   }
   const pauseNote = limits && isPauseActive(limits) ? pauseMessage(limits) : null;
-  return <PreviewTool commitments={commitments} today={todayInMexico()} pauseNote={pauseNote} />;
+  return (
+    <PreviewTool
+      commitments={commitments}
+      today={todayInMexico()}
+      pauseNote={pauseNote}
+      ceiling={limits?.ceiling_per_quincena ?? null}
+    />
+  );
 }

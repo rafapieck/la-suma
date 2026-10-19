@@ -41,6 +41,24 @@ describe("buildPreview", () => {
   });
 });
 
+describe("limit in the preview", () => {
+  it("reports how far 'after' goes past her own limit, only where it does", () => {
+    // before: 600 600 900 600 600 600 → after: 1000 1000 1300 1000 1000 1000
+    const { rows } = buildPreview(existing, hypo, "2026-11-01", 1100);
+    expect(rows.map((r) => r.afterAboveLimit)).toEqual([null, null, 200, null, null, null]);
+  });
+
+  it("never labels anything when she set no limit", () => {
+    const { rows } = buildPreview(existing, hypo, "2026-11-01");
+    expect(rows.every((r) => r.afterAboveLimit === null)).toBe(true);
+  });
+
+  it("does not label a total exactly at the limit", () => {
+    const { rows } = buildPreview(existing, hypo, "2026-11-01", 1000);
+    expect(rows.map((r) => r.afterAboveLimit)).toEqual([null, null, 300, null, null, null]);
+  });
+});
+
 describe("previewInputSchema", () => {
   it("defaults an empty store name", () => {
     expect(hypo.lender).toBe("Compra nueva");

@@ -28,9 +28,12 @@ export function PreviewTool({
   commitments,
   today,
   pauseNote = null,
+  ceiling = null,
 }: {
   commitments: CalendarCommitment[];
   today: string;
+  /** Her own limit per quincena, or null if she never set one. */
+  ceiling?: number | null;
   /** Her own pause note. Shown first, never blocks: "Continuar" always opens the preview. */
   pauseNote?: string | null;
 }) {
@@ -52,10 +55,18 @@ export function PreviewTool({
       </div>
     );
   }
-  return <PreviewForm commitments={commitments} today={today} />;
+  return <PreviewForm commitments={commitments} today={today} ceiling={ceiling} />;
 }
 
-function PreviewForm({ commitments, today }: { commitments: CalendarCommitment[]; today: string }) {
+function PreviewForm({
+  commitments,
+  today,
+  ceiling,
+}: {
+  commitments: CalendarCommitment[];
+  today: string;
+  ceiling: number | null;
+}) {
   const [errors, setErrors] = useState<Errors>({});
   const [paymentsUnknown, setPaymentsUnknown] = useState(false);
   const [result, setResult] = useState<{ input: PreviewInput; preview: Preview } | null>(null);
@@ -71,7 +82,7 @@ function PreviewForm({ commitments, today }: { commitments: CalendarCommitment[]
       return;
     }
     setErrors({});
-    setResult({ input: parsed.data, preview: buildPreview(commitments, parsed.data, today) });
+    setResult({ input: parsed.data, preview: buildPreview(commitments, parsed.data, today, ceiling) });
   }
 
   return (
@@ -137,7 +148,7 @@ function PreviewForm({ commitments, today }: { commitments: CalendarCommitment[]
         </button>
       </form>
 
-      {result && <Comparison {...result} />}
+      {result && <Comparison {...result} ceiling={ceiling} />}
 
       {!result && (
         <Link href="/calendario" className="py-3 text-center underline">
@@ -148,9 +159,31 @@ function PreviewForm({ commitments, today }: { commitments: CalendarCommitment[]
   );
 }
 
-function Comparison({ input, preview }: { input: PreviewInput; preview: Preview }) {
-  const max = Math.max(...preview.rows.map((r) => Math.max(r.before, r.after)));
-  const width = (n: number) => (max > 0 ? `${(n / max) * 100}%` : "0%");
+function Comparison({
+  input,
+  preview,
+  ceiling,
+}: {
+  input: PreviewInput;
+  preview: Preview;
+  ceiling: number | null;
+}) {
+  const max = Math.max(...preview.rows.map((r) => Math.max(r.before, r.after)), ceiling ?? 0);
+  const pct = (n: number) => (max > 0 ? (n / max) * 100 : 0);
+
+  // Both bars are neutral greys: color must not read as "yes" or "no".
+  const Bar = ({ value, className }: { value: number; className: string }) => (
+    <div className="relative h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
+      <div className={`h-2 rounded-full ${className}`} style={{ width: `${pct(value)}%` }} />
+      {ceiling !== null && (
+        <span
+          aria-hidden
+          className="absolute -top-1 h-4 border-l-2 border-dashed border-teal-900 dark:border-teal-200"
+          style={{ left: `calc(${pct(ceiling)}% - 1px)` }}
+        />
+      )}
+    </div>
+  );
 
   return (
     <section
@@ -165,6 +198,12 @@ function Comparison({ input, preview }: { input: PreviewInput; preview: Preview 
         <p className="mx-5 mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
           Vista previa: no se guardó nada. Solo incluye lo que tú agregaste.
         </p>
+        {ceiling !== null && (
+          <p className="mx-5 mt-3 flex items-center gap-2 text-sm text-teal-900 dark:text-teal-200">
+            <span className="inline-block w-6 border-t-2 border-dashed border-teal-900 dark:border-teal-200" />
+            Tu límite: {formatMoney(ceiling)}
+          </p>
+        )}
         <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 px-5 pt-4 text-sm text-zinc-500">
           <span>Quincena</span>
           <span className="w-24 text-right">Antes</span>
@@ -178,34 +217,35 @@ function Comparison({ input, preview }: { input: PreviewInput; preview: Preview 
                 <span className="w-24 text-right text-zinc-600 dark:text-zinc-400">
                   {formatMoney(r.before)}
                 </span>
-                <span className="w-24 text-right font-semibold text-teal-800 dark:text-teal-300">
-                  {formatMoney(r.after)}
-                </span>
+                <span className="w-24 text-right font-semibold">{formatMoney(r.after)}</span>
               </div>
-              {r.difference !== 0 && (
-                <p className="text-right text-sm text-zinc-500">
-                  +{formatMoney(r.difference)} con la compra
+              {(r.difference !== 0 || r.afterAboveLimit !== null) && (
+                <p className="text-right text-sm text-zinc-600 dark:text-zinc-400">
+                  {r.difference !== 0 && <>+{formatMoney(r.difference)} con la compra</>}
+                  {r.difference !== 0 && r.afterAboveLimit !== null && " · "}
+                  {r.afterAboveLimit !== null && (
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {formatMoney(r.afterAboveLimit)} arriba de tu límite
+                    </span>
+                  )}
                 </p>
               )}
               <div className="mt-2 flex flex-col gap-1">
-                <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                  <div className="h-2 rounded-full bg-zinc-400" style={{ width: width(r.before) }} />
-                </div>
-                <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                  <div className="h-2 rounded-full bg-teal-800 dark:bg-teal-400" style={{ width: width(r.after) }} />
-                </div>
+                <Bar value={r.before} className="bg-zinc-300 dark:bg-zinc-600" />
+                <Bar value={r.after} className="bg-zinc-700 dark:bg-zinc-300" />
               </div>
             </li>
           ))}
         </ul>
         <p className="px-5 pb-4 text-xs text-zinc-500">
-          Barra gris: antes. Barra verde: después.
+          Barra clara: antes. Barra oscura: después.
+          {ceiling !== null && " Línea punteada: tu límite."}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Link
           href={`/calendario/agregar?${toAddFormQuery(input)}`}
-          className="rounded-full bg-teal-800 px-4 py-4 text-center text-lg font-semibold text-white dark:bg-teal-400 dark:text-zinc-900"
+          className="rounded-full bg-zinc-200 px-4 py-4 text-center text-lg font-semibold dark:bg-zinc-800"
         >
           Agregarlo
         </Link>

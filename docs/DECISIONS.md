@@ -72,3 +72,7 @@
 - **What La Suma does now:** Google sign-in; RLS on both tables; add a payment by hand or from a photo read by Gemini (confirmed by the user, labeled, simulated fallback); 6-quincena calendar with incomplete warnings; before/after preview with no verdict; self-set limit line and pause note that never blocks; delete all data. All screens say "Datos inventados".
 - **Next:** Rafael runs the end-to-end check on https://la-suma-jet.vercel.app with invented data (F7, F8, the frequency fix). Then the Lupita persona test from PACKET section 11.
 - **Tomorrow's first move:** finish the live check list; log any bug here before fixing it.
+
+### Persona-test fixes (2026-10-19)
+Synthetic user "Lupita" (PACKET section 11). Worst confusion: in the before/after preview her own limit ($1,500) was not shown, and the green "after" bars read as "yes, you can afford it"; she would have bought the phone.
+- **Fix 1, preview shows her limit, neutral colors:** the preview now draws her own dashed limit mark on both bars with a "Tu límite: $X" legend. When an "after" total is above HER limit, the row shows a factual "$200 arriba de tu límite" (only if she set a limit; nothing at or below it, nothing without a limit). "After" bars are dark grey and "before" bars light grey, with no green. "Agregarlo" and "No agregar" now look the same, so neither is pushed. `buildPreview` takes the limit and returns `afterAboveLimit` per row (3 new tests, 52 pass). Checked in the browser with a $1,500 limit: dashed marks line up, labels appear only on rows above it, and no verdict words show.
