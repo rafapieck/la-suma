@@ -10,7 +10,7 @@ export default function AgregarPage({ searchParams }: { searchParams: SearchPara
       <p className="text-sm text-zinc-500">
         Datos inventados · versión de prueba. Si no sabes un dato, marca “No sé”.
       </p>
-      <Suspense fallback={<AddForm />}>
+      <Suspense fallback={<p>Cargando…</p>}>
         <PrefilledForm searchParams={searchParams} />
       </Suspense>
     </main>
